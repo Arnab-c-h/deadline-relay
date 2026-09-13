@@ -7,7 +7,7 @@ from copy import deepcopy
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from relay.intent import simulated_date
+from relay.intent import ModelError, simulated_date
 from relay.providers.base import ProviderError
 from relay.scheduler import propose
 
@@ -34,16 +34,21 @@ class WorkflowError(Exception):
 
 
 class RelayService:
-    def __init__(self, store, provider, mode="live"):
+    def __init__(self, store, provider, mode="live", interpreter=None):
         self.store, self.provider, self.mode = store, provider, mode
+        self.interpreter = interpreter
         self.execution_guard = threading.Lock()
 
     def health(self):
         connections = self.provider.health()
-        setup = [] if self.mode == "simulated" else [
-            "Select an LLM provider/model and configure runtime access before live planning.",
-            "Verify dedicated Notion, GitHub and Google Calendar resources.",
-        ]
+        model = ({"status": "simulated", "detail": "Offline date parser; no LLM call"}
+                 if self.mode == "simulated" else self.interpreter.health() if self.interpreter
+                 else {"status": "missing", "detail": "Live model configuration required"})
+        setup = []
+        if model["status"] not in {"ready", "simulated"}:
+            setup.append(model["detail"])
+        if any(item["status"] not in {"ready", "simulated"} for item in connections):
+            setup.append("Configure dedicated Notion, GitHub and Google Calendar runtime access.")
         project = getattr(self.provider, "config", {}).get("project", {})
         if self.mode == "simulated":
             project = {"name": "Atlas Release 1.0", "timezone": "Asia/Kolkata"}
@@ -51,9 +56,7 @@ class RelayService:
                     "name": project.get("name", "Project not configured"),
                     "timezone": project.get("timezone", "Not configured")},
                 "connections": connections,
-                "model": {"status": "simulated" if self.mode == "simulated" else "missing",
-                          "detail": "Offline date parser; no LLM call" if self.mode == "simulated"
-                          else "Live model configuration required"},
+                "model": model,
                 "runs": [{key: run[key] for key in ("id", "status", "updated_at")} for run in self.store.runs()],
                 "setup_required": setup}
 
@@ -64,11 +67,13 @@ class RelayService:
         return snapshot
 
     def plan(self, snapshot_id, request, alternative_date=None, parent_plan_id=None):
-        if self.mode == "live":
+        if self.mode == "live" and self.interpreter is None:
             raise WorkflowError("Live model access is not configured. Choose a provider/model before live planning.", 503)
         snapshot = self.store.get("snapshots", snapshot_id)
         if snapshot["mode"] != self.mode:
             raise WorkflowError("Snapshot belongs to another execution mode")
+        interpretation = {"method": "simulated-date-parser", "model": None, "usage": None}
+        intent = None
         if alternative_date:
             if not parent_plan_id:
                 raise WorkflowError("Alternative requires the prior server-generated plan")
@@ -77,18 +82,28 @@ class RelayService:
                     or parent["proposed_date"] != alternative_date or parent["request"] != request):
                 raise WorkflowError("Alternative does not match the prior proposal")
             requested_date = alternative_date
+            interpretation = {"method": "approved-alternative", "model": None, "usage": None,
+                              "parent_plan_id": parent_plan_id,
+                              "original_interpretation": parent["interpretation"]}
+        elif self.mode == "live":
+            try:
+                intent = self.interpreter.interpret(request, snapshot["project"]["timezone"])
+            except ModelError as error:
+                raise WorkflowError(str(error), 503) from None
+            requested_date = intent["requested_date"]
+            interpretation = intent["evidence"]
         else:
             requested_date = simulated_date(request)
         if requested_date:
             result = propose(snapshot, requested_date)
         else:
-            result = {"status": "clarification", "requested_date": None, "proposed_date": None,
-                      "explanation": "Please enter one complete date, such as September 24, 2026 or 2026-09-24.",
+            result = {"status": intent["status"] if intent else "clarification", "requested_date": None, "proposed_date": None,
+                      "explanation": intent["message"] if intent else "Please enter one complete date, such as September 24, 2026 or 2026-09-24.",
                       "conflicts": [], "operations": [], "items": [], "assumptions": []}
         plan = {**result, "id": uuid4().hex, "version": 1, "snapshot_id": snapshot_id,
                 "request": request, "created_at": now(), "mode": self.mode,
                 "parent_plan_id": parent_plan_id,
-                "interpretation": {"method": "simulated-date-parser", "model": None, "usage": None}}
+                "interpretation": interpretation}
         for op in plan["operations"]:
             if op["record_key"] == "notion:REL":
                 op["before"]["AcceptedPlan"] = snapshot["records"]["notion:REL"]["fields"]["AcceptedPlan"]

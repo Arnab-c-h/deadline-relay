@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from relay.intent import OpenAIInterpreter
 from relay.providers.base import ProviderError
 from relay.service import RUNNING, RelayService, WorkflowError
 from relay.store import Store
@@ -79,7 +80,8 @@ def create_app(data_dir=None, *, mode=None):
             provider = LiveProvider(config)
         except (ProviderError, ValueError, OSError):
             provider = MissingLiveProvider()
-    service = RelayService(store, provider, mode=selected_mode)
+    service = RelayService(store, provider, mode=selected_mode,
+                           interpreter=OpenAIInterpreter.from_env() if selected_mode == "live" else None)
 
     @asynccontextmanager
     async def lifespan(app):

@@ -54,11 +54,11 @@ The interface has a compact neutral workspace, readable before/after fields, sou
 
 ## Next setup checkpoint
 
-The assistant's Notion and Calendar MCP connections and GitHub CLI authentication work. They are separate from credentials held by the Deadline Relay server. The local server currently has no model key or dedicated provider credentials and correctly blocks planning.
+The assistant's Notion and Calendar MCP connections and GitHub CLI authentication work. They are separate from credentials held by the Deadline Relay server. OpenAI is now configured and live-tested. Dedicated app-provider runtime credentials are still missing, so the application correctly blocks analysis.
 
 Required next:
 
-1. Owner-selected LLM provider/model and its API key, stored in the ignored `.env` file, not chat. The real model adapter must then be implemented and tested against that provider.
+1. Completed: OpenAI `gpt-5-mini` with the owner's key in ignored `.env`; strict structured interpretation passed three real API smoke cases. Evidence is in `data/openai-smoke.json`.
 2. Server-owned Notion/GitHub/Calendar credentials or an explicitly implemented server integration with a credential broker. Do not extract or copy the assistant's MCP credentials or the broad GitHub CLI token.
 3. Discover the Notion **data source ID** through the chosen runtime connection. The connector returned the database ID; these must not be assumed identical. The `data_source_id` setting remains blank deliberately.
 4. Hosted storage, durable execution, owner authentication, OAuth callbacks, and Vercel deployment described in `PRODUCTION-TARGET.md`.

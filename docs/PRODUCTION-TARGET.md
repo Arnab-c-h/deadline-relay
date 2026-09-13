@@ -37,6 +37,7 @@ Prefer this migration because it preserves the verified scheduling and recovery 
 - Normal local startup now requires live mode. Environment configuration cannot enable the fixture provider, and normal runtime has no simulator reset endpoint.
 - Empty request field, missing project metadata, and blocked connection setup replace the fictional ready-to-use app state.
 - Existing scheduling/recovery unit tests continue to use explicit isolated factory overrides.
-- Hosted database, durable queue, owner authentication, hosted OAuth, real LLM, deployed packaging, and real acceptance remain implementation work. Dedicated provider test data was created and independently read back on September 14; see `LIVE-TEST-SETUP.md`. No deployment or application-driven end-to-end acceptance has happened yet.
+- OpenAI Responses interpretation is implemented. Three real `gpt-5-mini` calls passed: complete date, ambiguous date clarification, and unsupported extra action. Actual usage and request evidence are saved locally.
+- Hosted database, durable queue, owner authentication, hosted OAuth, deployed packaging, and real acceptance remain implementation work. Dedicated provider test data was created and independently read back on September 14; see `LIVE-TEST-SETUP.md`. No deployment or application-driven end-to-end acceptance has happened yet.
 
-Next owner input: LLM provider/model and access to the dedicated provider destinations. Hosted database and Vercel destination credentials will be requested when their setup becomes necessary. Keep secrets in local environment files or the deployment's server-side environment configuration.
+Next owner input: server-owned credentials for the dedicated provider destinations. Hosted database and Vercel destination credentials will be requested when their setup becomes necessary. Keep secrets in local environment files or the deployment's server-side environment configuration.

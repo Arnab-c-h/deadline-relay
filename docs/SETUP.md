@@ -4,9 +4,15 @@ The application requires real provider connections and model access. See PRODUCT
 
 ## Information needed from the owner
 
-1. LLM provider and model to use, plus the location of its local API key. The model adapter is deliberately pending this choice. `LLM_PROVIDER`, `LLM_MODEL`, and `LLM_API_KEY` are reserved placeholders, not implemented switches.
-2. Dedicated GitHub, Notion and Google Calendar destinations. The owner has authorized creating clearly named test records inside these actual apps for final acceptance; destination access is still required. Send resource links/IDs in chat; keep secrets in local files.
-3. Runtime credentials with access to those resources. No live resource has been created or edited during this implementation. The OAuth helper below is for local diagnostics; deployed OAuth callbacks and encrypted credential persistence are required before hosted acceptance.
+1. OpenAI is implemented and configured with `LLM_PROVIDER=openai`, `LLM_MODEL=gpt-5-mini`, and the owner's `LLM_API_KEY` in `.env`. `OPENAI_API_KEY` is accepted only when `LLM_API_KEY` is empty. Health verifies model access; actual generation can still fail on billing or rate limits.
+2. Dedicated GitHub, Notion and Google Calendar test records have been created and read back. See `LIVE-TEST-SETUP.md` for their links and verification boundary.
+3. The Python server still needs runtime credentials with access to those resources. The OAuth helper below is for local diagnostics; deployed OAuth callbacks and encrypted credential persistence are required before hosted acceptance.
+
+## OpenAI verification
+
+Run `uv run python -m scripts.check_openai` for three real API calls: complete date, ambiguous relative date, and an unsupported extra action. This consumes API tokens but never writes to the connected applications. Results, actual model version, token usage, request IDs and latency are stored in ignored `data/openai-smoke.json`. The September 14 run passed all three cases.
+
+Interpretation uses [OpenAI Responses structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs) with strict local schema and calendar-date validation. The model has no tools and receives only the request and timezone. Refusals, incomplete responses, malformed output and API errors block planning without a parser fallback. The deterministic scheduler produces operations; approval remains bound to the saved plan hash. Selecting a server-proposed alternative reuses the original interpretation evidence without another model call.
 
 ## Local files
 

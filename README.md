@@ -2,7 +2,7 @@
 
 Preview and approve a release-date change across Notion, a GitHub milestone, and Google Calendar. The local app includes deterministic scheduling, exact before/after review, a durable SQLite execution journal, and read-back verification.
 
-**Current target:** a fully connected Vercel application. Normal startup requires real connections and blocks planning when setup is missing. Hosted persistence, durable execution, authentication, hosted OAuth and the selected real model adapter remain in progress. See [the revised deployment requirements](docs/PRODUCTION-TARGET.md).
+**Current target:** a fully connected Vercel application. Normal startup requires real connections and blocks planning when setup is missing. OpenAI interpretation is implemented and live-tested; dedicated test records exist in all three apps. Server credentials, hosted persistence, durable execution, authentication and hosted OAuth remain in progress. See [the revised deployment requirements](docs/PRODUCTION-TARGET.md).
 
 ## Run locally
 
