@@ -1,0 +1,47 @@
+{
+  "project": {
+    "id": "demo",
+    "name": "Atlas Release 1.0",
+    "timezone": "Asia/Kolkata",
+    "planning_start": "2026-09-14",
+    "horizon_days": 30,
+    "deadline": "2026-09-25"
+  },
+  "notion": {
+    "data_source_id": "",
+    "properties": {
+      "name": "Name",
+      "schedule": "Schedule",
+      "estimate_days": "Estimate days",
+      "fixed": "Fixed",
+      "status": "Status",
+      "predecessors": "Predecessors",
+      "not_before": "Not before",
+      "delivery_date": "Delivery date",
+      "accepted_plan": "Accepted plan"
+    },
+    "records": {"T1": "", "T2": "", "T3": "", "M1": "", "T4": "", "T5": "", "M2": "", "REL": "", "U1": ""}
+  },
+  "github": {
+    "owner": "",
+    "repo": "",
+    "milestone_number": "",
+    "issues": {"T1": "", "T2": "", "T3": "", "T4": "", "T5": "", "U1": ""}
+  },
+  "calendar": {
+    "calendar_id": "",
+    "events": {"M1": "", "M2": "", "U2": ""}
+  },
+  "nodes": {
+    "T1": {"kind": "task", "record_key": "notion:T1", "issue_record_key": "github:T1"},
+    "T2": {"kind": "task", "record_key": "notion:T2", "issue_record_key": "github:T2"},
+    "T3": {"kind": "task", "record_key": "notion:T3", "issue_record_key": "github:T3"},
+    "M1": {"kind": "meeting", "record_key": "calendar:M1", "metadata_record_key": "notion:M1"},
+    "T4": {"kind": "task", "record_key": "notion:T4", "issue_record_key": "github:T4"},
+    "T5": {"kind": "task", "record_key": "notion:T5", "issue_record_key": "github:T5"},
+    "M2": {"kind": "meeting", "record_key": "calendar:M2", "metadata_record_key": "notion:M2"},
+    "REL": {"kind": "release", "record_key": "notion:REL", "issue_record_key": "github:REL"},
+    "U1": {"kind": "task", "record_key": "notion:U1", "issue_record_key": "github:U1"},
+    "U2": {"kind": "meeting", "record_key": "calendar:U2"}
+  }
+}
