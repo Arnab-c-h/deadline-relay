@@ -24,7 +24,7 @@ Both local configuration files and `secrets/` are ignored. Use `RELAY_MODE=live`
 
 Set `GITHUB_TOKEN` in `.env`. Use a token limited to the dedicated repository with the issue/milestone read and write access needed by the app. Read health does not prove write permissions.
 
-In `config.local.json`, set owner, repository, milestone number, and issue numbers for T1–T5 and U1. T1 must be closed; T2–T5 must be open and belong to the configured milestone. U1 remains unrelated. The milestone initially has a September 25, 2026, 18:00 Asia/Kolkata deadline (`2026-09-25T12:30:00Z`). The adapter only writes its `due_on` field; it never changes issues.
+In `config.local.json`, set owner, repository, milestone number, and issue numbers for T1–T5 and U1. T1 must be closed; T2–T5 must be open and belong to the configured milestone. U1 remains unrelated. The milestone initially has a September 25, 2026 due date (`2026-09-25T00:00:00Z`). GitHub normalizes milestone dates to midnight UTC; use that representation for writes and read-back verification. The project's business release cutoff remains 18:00 Asia/Kolkata and is evaluated independently of the milestone timestamp. The adapter only writes its `due_on` field; it never changes issues.
 
 ## Notion
 
@@ -39,12 +39,14 @@ Required mapped properties:
 | Estimate days | number |
 | Fixed | checkbox |
 | Status | status |
-| Predecessors | relation to the same data source |
+| Predecessors | relation to the same data source (default), or explicitly configured rich_text |
 | Not before | date |
 | Delivery date | date |
 | Accepted plan | rich_text |
 
 Create all properties in the data source; relevant fields must also be present with correct types in each returned page. Empty relation/date values are different from missing properties. Use `Done` for T1 and `Not started` for mutable tasks. In-progress tasks are unsupported. Notion owns task dates, estimates, fixed/completed flags, and dependencies. M1/M2 Notion rows carry dependency/fixed metadata; Calendar owns their actual start/end timestamps.
+
+If the connector cannot create a self-relation, explicitly set `"predecessors_type": "rich_text"` inside the `notion` configuration object and make the mapped Predecessors property a rich-text property. Enter comma-separated logical IDs, for example `T1, M1`, rather than page UUIDs or display names. Whitespace around IDs is trimmed; blank text means no predecessors. Every ID must exist in both `notion.records` and `nodes`. Duplicate IDs, self references, unknown IDs, and empty entries such as `T1,,M1` block snapshot creation. Schema and page types must match the explicit setting; the adapter never falls back from a failed relation read. Omitting this setting keeps relation mode and its allowlisted page-ID validation.
 
 Set the dependency chain to T1 → T2 → T3 → M1 → T4 → T5 → M2 → REL. U1 has no predecessors. Fixture dates and estimates are in PRD §11 and `relay/fixtures.py`. The API version headers implemented in `relay/providers/live.py` and schema behavior still require live validation.
 

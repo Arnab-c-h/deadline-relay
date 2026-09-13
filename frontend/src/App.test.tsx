@@ -44,6 +44,36 @@ function mockFetch(responses: unknown[]) {
 afterEach(() => vi.restoreAllMocks())
 
 describe('Deadline Relay workflow', () => {
+  it('shows missing planner configuration and enables planning after a real health refresh', async () => {
+    const live = { ...health, mode: 'live', connections: health.connections.map((item) => ({ ...item, status: 'ready', detail: 'Resource accessible' })) }
+    const fetcher = mockFetch([
+      { ...live, model: { status: 'missing', detail: 'Model runtime required' }, setup_required: ['GEMINI_API_KEY'] },
+      { ...live, model: { status: 'ready', detail: 'Planner configured' } },
+    ])
+    render(<App />)
+    expect(await screen.findByText('Live · setup required')).toBeVisible()
+    expect(screen.getByText('Model runtime required')).toBeVisible()
+    await userEvent.type(screen.getByLabelText('Deadline request'), ready.request)
+    expect(screen.getByRole('button', { name: 'Analyze impact' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh connections' }))
+    expect(await screen.findByText('Live · connected')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Analyze impact' })).toBeEnabled()
+    expect(fetcher.mock.calls.map(([url]) => url)).toEqual(['/api/projects/demo/health', '/api/projects/demo/health'])
+  })
+
+  it('formats schedule values for review without exposing raw objects', async () => {
+    const datedPlan = { ...ready, operations: [{ ...ready.operations[0], before: { Schedule: { start: '2026-09-25', end: '2026-09-25' }, Fixed: false }, after: { Schedule: { start: '2026-09-24', end: '2026-09-24' }, Fixed: true } }] }
+    mockFetch([health, snapshot, datedPlan])
+    render(<App />)
+    await screen.findByText('Simulated mode')
+    await userEvent.type(screen.getByLabelText('Deadline request'), ready.request)
+    await userEvent.click(screen.getByRole('button', { name: 'Analyze impact' }))
+    expect(await screen.findByRole('columnheader', { name: 'Proposed value' })).toBeVisible()
+    expect(screen.getAllByText('September 25, 2026')).toHaveLength(2)
+    expect(screen.getByText('Yes')).toBeVisible()
+    expect(screen.queryByText(/\{"start"/)).not.toBeInTheDocument()
+  })
+
   it('explains an infeasible request and requires a separate alternative plan', async () => {
     const fetcher = mockFetch([health, snapshot, infeasible, ready])
     render(<App />)

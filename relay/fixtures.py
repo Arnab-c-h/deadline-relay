@@ -50,7 +50,7 @@ def build_fixture() -> dict:
     )
     records["github:REL"] = _record(
         "github:REL", "github", "sim-milestone-1", "Atlas Release 1.0",
-        {"due_on": "2026-09-25T12:30:00Z", "title": "Atlas Release 1.0",
+        {"due_on": "2026-09-25T00:00:00Z", "title": "Atlas Release 1.0",
          "description": "Fictional Atlas release milestone"}, etag="fixture-gh-rel-v1",
     )
 

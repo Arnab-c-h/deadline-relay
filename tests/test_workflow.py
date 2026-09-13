@@ -52,7 +52,7 @@ def test_approved_run_verifies_five_changes_and_preserves_other_records(system):
     records = provider.snapshot()["records"]
     assert records["calendar:M2"]["fields"]["start"] == "2026-09-24T15:00:00+05:30"
     assert records["notion:T4"]["fields"]["Schedule"]["start"] == "2026-09-22"
-    assert records["github:REL"]["fields"]["due_on"] == "2026-09-24T12:30:00Z"
+    assert records["github:REL"]["fields"]["due_on"] == "2026-09-24T00:00:00Z"
     for key in ("notion:T1", "notion:T2", "calendar:M1", "notion:U1", "calendar:U2"):
         assert records[key] == before[key]
     assert records["calendar:M2"]["fields"]["description"] == before["calendar:M2"]["fields"]["description"]

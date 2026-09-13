@@ -346,7 +346,9 @@ def _operations(snapshot, placed, requested, zone):
         before = {"Schedule": records[f"notion:{item_id}"]["fields"]["Schedule"]}
         after = {"Schedule": {"start": start.date().isoformat(), "end": end.date().isoformat()}}
         _append_change(changes, records[f"notion:{item_id}"], before, after)
-    due = datetime.combine(requested, time(18), zone).astimezone(UTC).isoformat().replace("+00:00", "Z")
+    # GitHub milestones store a calendar date at midnight UTC. The schedule still
+    # uses the separate project-local 18:00 release cutoff in _release_interval.
+    due = datetime.combine(requested, time.min, UTC).isoformat().replace("+00:00", "Z")
     _append_change(changes, records["github:REL"], {"due_on": records["github:REL"]["fields"]["due_on"]}, {"due_on": due})
     _append_change(changes, records["notion:REL"], {"DeliveryDate": records["notion:REL"]["fields"]["DeliveryDate"]},
                    {"DeliveryDate": requested.isoformat()})

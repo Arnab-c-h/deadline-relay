@@ -4,6 +4,31 @@ from relay.fixtures import build_fixture
 from relay.scheduler import propose
 
 
+def test_github_midnight_readback_does_not_propose_the_milestone_again():
+    snapshot = build_fixture()
+    plan = propose(snapshot, "2026-09-24")
+    assert plan["status"] == "ready"
+    for operation in plan["operations"]:
+        snapshot["records"][operation["record_key"]]["fields"].update(operation["after"])
+    # The live GitHub API returns a date encoded at midnight UTC, even when sent a later time.
+    snapshot["records"]["github:REL"]["fields"]["due_on"] = "2026-09-24T00:00:00Z"
+    for node in snapshot["nodes"]:
+        fields = snapshot["records"][node["record_key"]]["fields"]
+        if node["kind"] == "task":
+            node.update(start=fields["Schedule"]["start"], end=fields["Schedule"]["end"])
+        elif node["kind"] == "meeting":
+            node.update(start=fields["start"], end=fields["end"])
+        else:
+            node.update(start=fields["DeliveryDate"], end=fields["DeliveryDate"])
+
+    verified = propose(snapshot, "2026-09-24")
+
+    assert verified["status"] == "ready"
+    assert verified["operations"] == []
+    milestone = next(operation for operation in plan["operations"] if operation["record_key"] == "github:REL")
+    assert milestone["after"] == {"due_on": "2026-09-24T00:00:00Z"}
+
+
 def test_fixture_is_complete_normalized_and_clearly_simulated():
     snapshot = build_fixture()
 
@@ -22,7 +47,7 @@ def test_fixture_is_complete_normalized_and_clearly_simulated():
     assert len(snapshot["records"]) == 17
     assert all(record["source_url"] is None for record in snapshot["records"].values())
     assert snapshot["records"]["calendar:M2"]["fields"]["location"] == "Atlas demo room"
-    assert snapshot["records"]["github:REL"]["fields"]["due_on"] == "2026-09-25T12:30:00Z"
+    assert snapshot["records"]["github:REL"]["fields"]["due_on"] == "2026-09-25T00:00:00Z"
     assert snapshot["records"]["notion:T1"]["fields"]["Status"] == "Done"
     assert snapshot["records"]["notion:T2"]["fields"]["Status"] == "Not started"
 
@@ -64,8 +89,8 @@ def test_september_24_plan_has_exact_five_normalized_operations():
         (
             "op-4",
             "github:REL",
-            {"due_on": "2026-09-25T12:30:00Z"},
-            {"due_on": "2026-09-24T12:30:00Z"},
+            {"due_on": "2026-09-25T00:00:00Z"},
+            {"due_on": "2026-09-24T00:00:00Z"},
         ),
         (
             "op-5",
@@ -177,7 +202,7 @@ def test_weekend_deadline_is_preserved_in_project_timezone():
     assert result["requested_date"] == "2026-09-26"
     assert result["proposed_date"] == "2026-09-26"
     milestone = next(op for op in result["operations"] if op["record_key"] == "github:REL")
-    assert milestone["after"] == {"due_on": "2026-09-26T12:30:00Z"}
+    assert milestone["after"] == {"due_on": "2026-09-26T00:00:00Z"}
 
 
 def test_propose_does_not_mutate_snapshot_or_unrelated_records():

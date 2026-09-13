@@ -76,6 +76,76 @@ def _provider(tmp_path, monkeypatch, handler):
     return LiveProvider(_config(tmp_path), client=httpx.Client(transport=httpx.MockTransport(handler)))
 
 
+def _predecessor_provider(tmp_path, monkeypatch, *, mode=None, schema_type="rich_text",
+                          page_type=None, value="T1, M2"):
+    page_type = page_type or schema_type
+    schema = {"Name": {"type": "title"}, "Schedule": {"type": "date"},
+              "EstimateDays": {"type": "number"}, "Fixed": {"type": "checkbox"},
+              "Status": {"type": "status"}, "Predecessors": {"type": schema_type},
+              "NotBefore": {"type": "date"}, "DeliveryDate": {"type": "date"},
+              "AcceptedPlan": {"type": "rich_text"}}
+    prop = {"type": page_type, page_type: ([{"plain_text": value}] if page_type == "rich_text"
+                                        else [{"id": item} for item in value]), "has_more": False}
+    page = {"properties": {"Name": {"type": "title", "title": [{"plain_text": "Review"}]},
+                           "Fixed": {"type": "checkbox", "checkbox": True}, "Predecessors": prop}}
+
+    def handler(request):
+        return httpx.Response(200, json={"properties": schema} if "/data_sources/" in request.url.path else page)
+
+    provider = _provider(tmp_path, monkeypatch, handler)
+    config = provider.config
+    if mode is not None:
+        config["notion"]["predecessors_type"] = mode
+    provider.config_path.write_text(json.dumps(config), encoding="utf-8")
+    return LiveProvider(provider.config_path, client=provider.client)
+
+
+def test_notion_rich_text_predecessors_require_explicit_opt_in(tmp_path, monkeypatch):
+    provider = _predecessor_provider(tmp_path, monkeypatch, mode="rich_text")
+    assert provider.read("notion:M1")["fields"]["Predecessors"] == ["T1", "M2"]
+    provider = _predecessor_provider(tmp_path, monkeypatch)
+    with pytest.raises(ProviderError, match="wrong type"):
+        provider.read("notion:M1")
+
+
+@pytest.mark.parametrize("value, message", [
+    ("T1, T1", "duplicate"), ("M1", "itself"), ("T999", "unknown logical ID"),
+    ("page-t1", "unknown logical ID"), ("T1,,M2", "empty logical ID"),
+])
+def test_notion_rich_text_rejects_invalid_predecessors(tmp_path, monkeypatch, value, message):
+    provider = _predecessor_provider(tmp_path, monkeypatch, mode="rich_text", value=value)
+    with pytest.raises(ProviderError, match=message):
+        provider.read("notion:M1")
+
+
+def test_notion_rich_text_allows_empty_predecessors(tmp_path, monkeypatch):
+    provider = _predecessor_provider(tmp_path, monkeypatch, mode="rich_text", value="  ")
+    assert provider.read("notion:M1")["fields"]["Predecessors"] == []
+
+
+@pytest.mark.parametrize("schema_type,page_type", [("relation", "relation"), ("rich_text", "relation")])
+def test_notion_rich_text_mode_checks_both_schema_and_page_types(tmp_path, monkeypatch, schema_type, page_type):
+    provider = _predecessor_provider(tmp_path, monkeypatch, mode="rich_text",
+                                     schema_type=schema_type, page_type=page_type, value=["page-t1"])
+    with pytest.raises(ProviderError, match="wrong type"):
+        provider.read("notion:M1")
+
+
+def test_notion_invalid_predecessor_mode_is_rejected_in_configuration(tmp_path, monkeypatch):
+    with pytest.raises(ProviderError, match="predecessors_type"):
+        _predecessor_provider(tmp_path, monkeypatch, mode="auto")
+
+
+@pytest.mark.parametrize("value,message", [
+    (["unlisted-page"], "non-allowlisted page"), (["page-t1", "page-t1"], "duplicate"),
+    (["page-m1"], "itself"),
+])
+def test_notion_relation_still_validates_allowlist_and_dependency_ids(tmp_path, monkeypatch, value, message):
+    provider = _predecessor_provider(tmp_path, monkeypatch, schema_type="relation", value=value)
+    with pytest.raises(ProviderError, match=message):
+        provider.read("notion:M1")
+
+
 def test_unknown_resource_and_fields_are_rejected_before_http(tmp_path, monkeypatch):
     calls = []
     provider = _provider(tmp_path, monkeypatch, lambda request: calls.append(request))
@@ -101,7 +171,7 @@ def test_github_uses_version_and_pages_all_issues(tmp_path, monkeypatch):
                     "number": 7,
                     "title": "Atlas",
                     "description": "release",
-                    "due_on": "2026-09-25T12:30:00Z",
+                    "due_on": "2026-09-25T00:00:00Z",
                     "html_url": "https://github.test/m/7",
                 },
             )
@@ -118,9 +188,9 @@ def test_github_uses_version_and_pages_all_issues(tmp_path, monkeypatch):
 
     provider = _provider(tmp_path, monkeypatch, handler)
     record = provider.read("github:REL")
-    assert record["fields"] == {"due_on": "2026-09-25T12:30:00Z", "title": "Atlas", "description": "release"}
-    provider.write("github:REL", {"due_on": "2026-09-24T12:30:00Z"})
-    assert json.loads(seen[-1].content) == {"due_on": "2026-09-24T12:30:00Z"}
+    assert record["fields"] == {"due_on": "2026-09-25T00:00:00Z", "title": "Atlas", "description": "release"}
+    provider.write("github:REL", {"due_on": "2026-09-24T00:00:00Z"})
+    assert json.loads(seen[-1].content) == {"due_on": "2026-09-24T00:00:00Z"}
 
 
 def test_notion_current_version_preserves_extra_fields_and_maps_date(tmp_path, monkeypatch):

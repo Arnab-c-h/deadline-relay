@@ -234,7 +234,7 @@ Use a single Notion data source with five task rows, two meeting-reference rows,
 | Estimate days | number | Positive integer working-day duration |
 | Fixed | checkbox | Immutable constraint |
 | Not before | date | Earliest permitted start |
-| Predecessors | relation to same data source | Explicit finish-to-start edges |
+| Predecessors | relation to same data source, or explicitly configured rich text logical IDs | Explicit finish-to-start edges; all targets must be allowlisted |
 | Issue number | number | Issue within the configured repository |
 | Calendar event ID | rich_text | Existing event ID |
 | Source URL | url | Cross-app evidence link |
@@ -375,7 +375,7 @@ On restart, treat unresolved IN_FLIGHT operations as uncertain. Reconcile before
 
 Complete success requires all intended values to match fresh provider reads, scheduling constraints to pass, Notion/GitHub delivery dates to agree, and preservation checks to pass. No operation can remain failed, uncertain, or unverified.
 
-Normalize timestamps before comparing. September 24 at 18:00 IST maps to GitHub `due_on = 2026-09-24T12:30:00Z`. Validate round-trip behavior and visible provider date rendering during the live smoke test.
+Treat the GitHub milestone deadline as a calendar date, encoded as `due_on = 2026-09-24T00:00:00Z` for September 24. Live create, update, and independent GET checks confirmed GitHub normalizes the supplied time to midnight UTC. The scheduler's release cutoff remains 18:00 in the project timezone; it is separate from GitHub's date-only field. Validate round-trip behavior and visible provider date rendering during the live smoke test.
 
 Preservation comparisons cover user-controlled business fields and exclude provider-managed metadata such as ETags and update timestamps. Verification establishes observed state at the displayed time, not protection against later external edits.
 

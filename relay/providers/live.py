@@ -71,6 +71,8 @@ class LiveProvider(Provider):
         }
         if not required_properties.issubset(self.config["notion"]["properties"]):
             raise ProviderError("Notion property mapping is incomplete")
+        if self.config["notion"].get("predecessors_type", "relation") not in ("relation", "rich_text"):
+            raise ProviderError("notion.predecessors_type must be relation or rich_text")
         for provider, mapping_name in (("notion", "records"), ("github", "issues"), ("calendar", "events")):
             mapping = self.config[provider][mapping_name]
             if not isinstance(mapping, dict) or any(value in (None, "") for value in mapping.values()):
@@ -258,7 +260,7 @@ class LiveProvider(Provider):
             "estimate_days": "number",
             "fixed": "checkbox",
             "status": "status",
-            "predecessors": "relation",
+            "predecessors": self.config["notion"].get("predecessors_type", "relation"),
             "not_before": "date",
             "delivery_date": "date",
             "accepted_plan": "rich_text",
@@ -311,18 +313,7 @@ class LiveProvider(Provider):
         for scalar_date in ("NotBefore", "DeliveryDate"):
             if isinstance(fields.get(scalar_date), dict):
                 fields[scalar_date] = fields[scalar_date]["start"]
-        predecessors = fields.get("Predecessors")
-        if isinstance(predecessors, str):
-            fields["Predecessors"] = [item.strip() for item in predecessors.split(",") if item.strip()]
-        elif isinstance(predecessors, list):
-            reverse_ids = {
-                str(notion_page_id): logical
-                for logical, notion_page_id in self.config["notion"]["records"].items()
-            }
-            try:
-                fields["Predecessors"] = [reverse_ids[str(notion_page_id)] for notion_page_id in predecessors]
-            except KeyError as exc:
-                raise ProviderError("Notion predecessor relation targets a non-allowlisted page") from exc
+        fields["Predecessors"] = self._notion_predecessors(logical, fields.get("Predecessors"))
         return {
             "key": key,
             "provider": "notion",
@@ -332,6 +323,34 @@ class LiveProvider(Provider):
             "fields": fields,
             "etag": None,
         }
+
+    def _notion_predecessors(self, logical: str, value: Any) -> list[str]:
+        mode = self.config["notion"].get("predecessors_type", "relation")
+        if mode == "rich_text":
+            if not isinstance(value, str):
+                raise ProviderError("Notion predecessor rich_text value must be text")
+            predecessors = [item.strip() for item in value.split(",")] if value.strip() else []
+            if any(not item for item in predecessors):
+                raise ProviderError("Notion predecessors contain an empty logical ID")
+        else:
+            if not isinstance(value, list):
+                raise ProviderError("Notion predecessor relation value must be a list")
+            reverse_ids = {
+                str(notion_page_id): node_id
+                for node_id, notion_page_id in self.config["notion"]["records"].items()
+            }
+            try:
+                predecessors = [reverse_ids[str(notion_page_id)] for notion_page_id in value]
+            except KeyError as exc:
+                raise ProviderError("Notion predecessor relation targets a non-allowlisted page") from exc
+        allowed = set(self.config["notion"]["records"]) & set(self.config.get("nodes", {}))
+        if any(item not in allowed for item in predecessors):
+            raise ProviderError("Notion predecessor references an unknown logical ID")
+        if len(predecessors) != len(set(predecessors)):
+            raise ProviderError("Notion predecessors contain a duplicate logical ID")
+        if logical in predecessors:
+            raise ProviderError("Notion record cannot list itself as a predecessor")
+        return predecessors
 
     def _read_notion_relation(self, page_id: str, property_id: str) -> list[str]:
         if not property_id:
