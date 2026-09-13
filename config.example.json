@@ -41,7 +41,6 @@
     "T5": {"kind": "task", "record_key": "notion:T5", "issue_record_key": "github:T5"},
     "M2": {"kind": "meeting", "record_key": "calendar:M2", "metadata_record_key": "notion:M2"},
     "REL": {"kind": "release", "record_key": "notion:REL", "issue_record_key": "github:REL"},
-    "U1": {"kind": "task", "record_key": "notion:U1", "issue_record_key": "github:U1"},
-    "U2": {"kind": "meeting", "record_key": "calendar:U2"}
+    "U1": {"kind": "task", "record_key": "notion:U1", "issue_record_key": "github:U1"}
   }
 }

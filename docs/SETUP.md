@@ -6,7 +6,7 @@ The application requires real provider connections and model access. See PRODUCT
 
 1. OpenAI is implemented and configured with `LLM_PROVIDER=openai`, `LLM_MODEL=gpt-5-mini`, and the owner's `LLM_API_KEY` in `.env`. `OPENAI_API_KEY` is accepted only when `LLM_API_KEY` is empty. Health verifies model access; actual generation can still fail on billing or rate limits.
 2. Dedicated GitHub, Notion and Google Calendar test records have been created and read back. See `LIVE-TEST-SETUP.md` for their links and verification boundary.
-3. The Python server still needs runtime credentials with access to those resources. The OAuth helper below is for local diagnostics; deployed OAuth callbacks and encrypted credential persistence are required before hosted acceptance.
+3. The local Python server now has runtime credentials for all three providers. On September 14, all read probes passed and a combined live snapshot loaded 19 records and 9 project nodes. This verifies read access, not approved write execution. The OAuth helper below is for local diagnostics; deployed OAuth callbacks and encrypted credential persistence are required before hosted acceptance.
 
 ## OpenAI verification
 
@@ -78,8 +78,10 @@ Configure the calendar ID and existing M1, M2, and U2 event IDs. All use Asia/Ko
 
 Other opaque events in the configured horizon constrain meeting availability. The app reads and preserves their source evidence. Calendar writes use `If-Match` with the observed ETag; stale responses stop execution.
 
+Keep U2 in `calendar.events`, but omit it from `nodes`: it is an unrelated calendar constraint with no Notion dependency metadata. Its event remains in snapshots, availability checks, impact previews, and protected-record verification.
+
 ## Live acceptance gate
 
-After model selection, finish its structured extraction adapter and tests, then restart the server with the live configuration. Confirm authentication and read access independently for each app, inspect the full snapshot, and test only the dedicated fixture. Verify every approved value and every protected field in all three real apps. Record actual request latency, model usage/cost, retry outcomes, and screenshots. Do not label the submission live-ready before these checks pass.
+The OpenAI adapter, provider read probes, and combined live snapshot have passed. Next, test the complete approval and execution workflow using only the dedicated fixture. Verify every approved value and every protected field in all three real apps. Record actual request latency, model usage/cost, retry outcomes, and screenshots. Do not label the submission live-ready before these checks pass.
 
 Configuration is read at process start. Restart after changing resource mappings or credentials. Secrets must not be pasted into source files, screenshots, or the submission recording.

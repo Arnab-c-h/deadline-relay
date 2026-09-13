@@ -238,7 +238,8 @@ class LiveProvider(Provider):
 
     def _github_url(self, path: str) -> str:
         cfg = self.config["github"]
-        return f"https://api.github.com/repos/{quote(cfg['owner'])}/{quote(cfg['repo'])}/{path}"
+        base = f"https://api.github.com/repos/{quote(cfg['owner'])}/{quote(cfg['repo'])}"
+        return f"{base}/{path}" if path else base
 
     def _calendar_url(self, event_id: str | None = None) -> str:
         cid = quote(self.config["calendar"]["calendar_id"], safe="")

@@ -475,6 +475,8 @@ def test_health_marks_ready_only_after_readonly_probe(tmp_path, monkeypatch):
         if request.url.host == "api.notion.com":
             return httpx.Response(200, json={"id": "ds-1"})
         if request.url.host == "api.github.com":
+            if request.url.path != "/repos/acme/atlas":
+                return httpx.Response(404, json={"message": "Not Found"})
             return httpx.Response(200, json={"full_name": "acme/atlas"})
         return httpx.Response(200, json={"id": "owned@example.test"})
 
