@@ -1,6 +1,6 @@
 # Real application test data
 
-Prepared September 14, 2026 (Asia/Kolkata). This is a verified seed baseline, **not an application-driven end-to-end pass**.
+Prepared September 14, 2026 (Asia/Kolkata). This document describes the original seed baseline. The app subsequently changed those real records during successful live acceptance; see `LIVE-ACCEPTANCE.md` for results and their current dates.
 
 ## Resources created
 
@@ -50,17 +50,17 @@ Ignored local files retain the resource mapping and provider read-backs:
 
 Run `uv run python scripts/check_seed_evidence.py` to check captured baseline evidence. It validates all nine Notion rows, six issues, the milestone, and three events. This checker makes no API calls and cannot claim current live state or agent execution.
 
-The interface has a compact neutral workspace, readable before/after fields, source links, expandable technical evidence, connection refresh, and a baseline deadline label. Browser checks covered the actual setup screen, navigation, refresh, disabled planning, and narrow layout overflow. Automated tests cover plan review, approval, retries, and recovery. Populated live plan/run screens remain unverified until runtime access is configured.
+The interface has a compact neutral workspace, readable before/after fields, source links, expandable technical evidence, connection refresh, and a baseline deadline label. Browser checks now include populated live infeasibility, alternative review, approval, verified execution, unfinished-run discovery after an actual restart, and resume through verified completion. The live test report records the observed recovery-status bug and its verified fix.
 
 ## Next setup checkpoint
 
-The assistant's Notion and Calendar MCP connections and GitHub CLI authentication work. They are separate from credentials held by the Deadline Relay server. OpenAI is now configured and live-tested. Dedicated app-provider runtime credentials are still missing, so the application correctly blocks analysis.
+The assistant's Notion and Calendar MCP connections and GitHub CLI authentication remain separate from the Deadline Relay server. The server now has its own Notion and GitHub tokens and Google OAuth credentials. OpenAI and all three provider connections have been live-tested.
 
 Required next:
 
 1. Completed: OpenAI `gpt-5-mini` with the owner's key in ignored `.env`; strict structured interpretation passed three real API smoke cases. Evidence is in `data/openai-smoke.json`.
-2. Server-owned Notion/GitHub/Calendar credentials or an explicitly implemented server integration with a credential broker. Do not extract or copy the assistant's MCP credentials or the broad GitHub CLI token.
-3. Discover the Notion **data source ID** through the chosen runtime connection. The connector returned the database ID; these must not be assumed identical. The `data_source_id` setting remains blank deliberately.
+2. Completed: server-owned Notion/GitHub tokens and Google Calendar OAuth. Secrets remain ignored and local.
+3. Completed: the Notion **data source ID** was discovered using the runtime token and saved in ignored local configuration. It differs from the database ID.
 4. Hosted storage, durable execution, owner authentication, OAuth callbacks, and Vercel deployment described in `PRODUCTION-TARGET.md`.
 5. Drive the actual deployed UI through infeasible September 18 → reviewed September 24 → approval → verified changes. Independently check only M2, T4, T5, milestone date, and REL changed; preserve T1/T2/T3/M1/U1/U2 and unrelated fields.
 

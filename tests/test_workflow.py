@@ -67,6 +67,28 @@ def test_hash_and_version_tampering_cannot_approve(system):
         service.approve(plan["id"], 2, plan["hash"], "tamper-version")
 
 
+@pytest.mark.parametrize("paused_status", ["UNCERTAIN", "PARTIAL", "FAILED"])
+def test_resume_persists_pollable_status_before_executor_starts(system, paused_status):
+    service, provider, store = system
+    run_id = approve(service, ready(service))
+    run = service.run(run_id)
+    run["status"] = paused_status
+    run["reason"] = "Execution paused"
+    run["operations"][0].update(status="UNCERTAIN", attempts=1)
+    store.save_run(run)
+    original_records = deepcopy(provider.snapshot()["records"])
+
+    service.resume(run_id, "resume-polling")
+
+    queued = service.run(run_id)
+    assert queued["status"] == "QUEUED"
+    assert queued["reason"] is None
+    assert queued["operations"] == run["operations"]
+    assert provider.snapshot()["records"] == original_records
+    service.execute(run_id)
+    assert service.run(run_id)["status"] == "VERIFIED"
+
+
 def test_duplicate_approval_and_repeated_resume_do_not_repeat_mutations(system):
     service, provider, _ = system
     plan = ready(service)

@@ -6,7 +6,7 @@ The application requires real provider connections and model access. See PRODUCT
 
 1. OpenAI is implemented and configured with `LLM_PROVIDER=openai`, `LLM_MODEL=gpt-5-mini`, and the owner's `LLM_API_KEY` in `.env`. `OPENAI_API_KEY` is accepted only when `LLM_API_KEY` is empty. Health verifies model access; actual generation can still fail on billing or rate limits.
 2. Dedicated GitHub, Notion and Google Calendar test records have been created and read back. See `LIVE-TEST-SETUP.md` for their links and verification boundary.
-3. The local Python server now has runtime credentials for all three providers. On September 14, all read probes passed and a combined live snapshot loaded 19 records and 9 project nodes. This verifies read access, not approved write execution. The OAuth helper below is for local diagnostics; deployed OAuth callbacks and encrypted credential persistence are required before hosted acceptance.
+3. The local Python server now has runtime credentials for all three providers. On September 14, the live workflow applied and independently verified five changes across the real apps. Approval guards, stale-plan rejection, real process-interruption recovery, and Google token refresh were also exercised; see `LIVE-ACCEPTANCE.md`. The OAuth helper below is for local diagnostics; deployed OAuth callbacks and encrypted credential persistence are required before hosted acceptance.
 
 ## OpenAI verification
 
@@ -82,6 +82,6 @@ Keep U2 in `calendar.events`, but omit it from `nodes`: it is an unrelated calen
 
 ## Live acceptance gate
 
-The OpenAI adapter, provider read probes, and combined live snapshot have passed. Next, test the complete approval and execution workflow using only the dedicated fixture. Verify every approved value and every protected field in all three real apps. Record actual request latency, model usage/cost, retry outcomes, and screenshots. Do not label the submission live-ready before these checks pass.
+The connected local workflow has passed the checks recorded in `LIVE-ACCEPTANCE.md`; these results do not establish hosted readiness. After deploying the production architecture, repeat approval, execution, independent preservation checks, and recovery against dedicated fixtures on the hosted app. Include deployed authentication, OAuth expiry/revocation, and retry exhaustion checks before production acceptance.
 
 Configuration is read at process start. Restart after changing resource mappings or credentials. Secrets must not be pasted into source files, screenshots, or the submission recording.

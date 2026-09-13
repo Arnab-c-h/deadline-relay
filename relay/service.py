@@ -169,6 +169,11 @@ class RelayService:
                 raise WorkflowError("Run belongs to another execution mode")
             if not prior:
                 db.execute("INSERT INTO requests VALUES(?,?,?)", (idempotency_key, payload, run_id))
+            if run["status"] in {"UNCERTAIN", "PARTIAL", "FAILED"}:
+                # Persist an active status before the HTTP response can reach the
+                # browser; its first GET must keep polling until execution settles.
+                run.update(status="QUEUED", reason=None, updated_at=now())
+                db.execute("UPDATE runs SET status=?,data=? WHERE id=?", ("QUEUED", json.dumps(run), run_id))
         return {"run_id": run_id}
 
     def recovery_plan(self, run_id):
