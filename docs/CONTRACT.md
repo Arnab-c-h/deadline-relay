@@ -30,7 +30,10 @@ GET /projects/demo/health => `{mode,project:{name,timezone},connections:list,mod
 POST /projects/demo/snapshots body {} => Snapshot with id.
 POST /projects/demo/plans body `{snapshot_id,request,alternative_date?:ISO-date}` => Plan `{id,version:1,hash,snapshot_id,request,status,requested_date,proposed_date,explanation,conflicts,operations,items,assumptions,created_at,mode,interpretation:{method,model?,usage?}}`. alternative_date accepted only from prior server-computed alternative with parent_plan_id; send parent_plan_id when selecting.
 GET /plans/{id} => Plan.
+GET /snapshots/{id} => stored Snapshot for review and restored-run context.
 POST /plans/{id}/approve body `{version,hash,idempotency_key}` => `{run_id}` (202). GET /runs/{id} => `{id,plan_id,status,mode,created_at,updated_at,reason,operations:list[Operation+{status,attempts,evidence?,error?}],verification?:dict}`.
 POST /runs/{id}/resume body `{idempotency_key}` => `{run_id}` (202).
+POST /runs/{id}/recovery-plan body `{}` => a new Plan after EXHAUSTED retries. It contains only remaining edits, a fresh snapshot/version/hash, and requires a separate approval. This endpoint never executes writes.
 POST /demo/reset body `{confirm:true}` => `{ok:true}` only simulated, blocked while unfinished runs exist. No browser fault injection controls in first UI; tests use provider test helper hooks.
 Errors `{detail:str}`. Frontend polls run 750ms while status QUEUED/PREFLIGHT/EXECUTING/VERIFYING, stops on pause/final. Resume visible PARTIAL/UNCERTAIN/FAILED (server controls eligibility); stale/mismatch requires new snapshot/plan. Every mutation stores idempotency key per action stable across retries. No auto approval; choose alternative fetches a new plan then requires human approval.
+Successful terminal status is VERIFIED. EXHAUSTED permits recovery-plan review, not blind resume. Request parsing may return clarification with a null requested_date; the UI must not fabricate a date or offer an executable alternative.
