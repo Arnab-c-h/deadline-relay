@@ -4,6 +4,12 @@ Preview and approve a release-date change across Notion, a GitHub milestone, and
 
 **Current target:** a fully connected Vercel application. Normal startup requires real connections and blocks planning when setup is missing. OpenAI interpretation is implemented and live-tested; dedicated test records exist in all three apps. Server credentials, hosted persistence, durable execution, authentication and hosted OAuth remain in progress. See [the revised deployment requirements](docs/PRODUCTION-TARGET.md).
 
+## Video walkthrough
+
+[Watch the narrated demo on Google Drive](https://drive.google.com/file/d/1cBZQZtL02eKyYgDCmx3iFEk9syZUgLM9/view?usp=sharing) (4:58, with captions).
+
+The walkthrough shows deadline analysis, plan approval, and verified updates using dedicated test records in Notion, GitHub, and Google Calendar. Google Drive viewing requires an account with access to the video.
+
 ## Run locally
 
 Prerequisites: `uv` and Node.js/npm. Python 3.13+ is declared; this build was verified with uv-managed Python 3.14.3 and Node 24.14.1.
