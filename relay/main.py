@@ -14,7 +14,6 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from relay.providers.base import ProviderError
 from relay.service import RUNNING, RelayService, WorkflowError
-from relay.simulation import SimulationProvider
 from relay.store import Store
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,11 +59,18 @@ class MissingLiveProvider:
 
 def create_app(data_dir=None, *, mode=None):
     load_dotenv(ROOT / ".env", override=False)
-    selected_mode = mode or os.getenv("RELAY_MODE", "simulated")
+    # Explicit factory overrides are used only by isolated automated tests.
+    # A normal launch cannot select the fixture provider through configuration.
+    if mode is None and os.getenv("RELAY_MODE", "live") != "live":
+        raise RuntimeError("The application requires real connections; remove the simulated RELAY_MODE setting")
+    if mode == "simulated" and data_dir is None:
+        raise RuntimeError("The application requires real connections; test fixtures need an isolated data directory")
+    selected_mode = mode or "live"
     if selected_mode not in {"simulated", "live"}:
         raise RuntimeError("RELAY_MODE must be simulated or live")
     store = Store(Path(data_dir or ROOT / "data") / f"relay-{selected_mode}.sqlite")
     if selected_mode == "simulated":
+        from relay.simulation import SimulationProvider
         provider = SimulationProvider(store)
     else:
         from relay.providers.live import LiveProvider
@@ -150,9 +156,10 @@ def create_app(data_dir=None, *, mode=None):
     def recovery_plan(run_id: str):
         return service.recovery_plan(run_id)
 
-    @app.post("/api/demo/reset")
-    def reset(body: ResetRequest):
-        return service.reset()
+    if selected_mode == "simulated":
+        @app.post("/api/demo/reset", include_in_schema=False)
+        def reset(body: ResetRequest):
+            return service.reset()
 
     frontend = ROOT / "frontend" / "dist"
     if frontend.exists():

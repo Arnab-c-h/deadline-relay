@@ -1,15 +1,17 @@
 # Deadline Relay — Product Requirements Document
 
 **Project:** Multi-App AI Agent Hackathon
-**Status:** Draft for review; implementation has not started
+**Status:** Implementation in progress; connected Vercel deployment required
 **Version:** 1.0
 **Research baseline:** September 10, 2026
 **Build assumption:** Two builders, one hackathon build window
-**Delivery:** Local application, reproducible repository, two-minute recorded demo, and short system/reliability brief
+**Delivery:** Connected Vercel application, reproducible repository, and real end-to-end acceptance evidence
 
 > Change a deadline once. Understand its consequences, approve a feasible plan, and verify the updates across your project tools.
 
 This PRD consolidates the product, UX, integration, execution, evaluation, and submission specifications. All requirements are mandatory unless explicitly marked **optional**. Targets are proposed acceptance targets, not measured results. The API and event research below was checked during PRD preparation; credentials and live integration behavior have not been validated.
+
+> **September 13 scope correction:** The application must use real model and provider calls and eventually run on Vercel. Mock project records may be created inside the actual apps for acceptance testing. Local simulation is not an accepted product or end-to-end result. Local SQLite/background-task and demo-only assumptions below are historical; the updated architecture is in deadline-relay/docs/PRODUCTION-TARGET.md (docs/PRODUCTION-TARGET.md within the repository).
 
 ## 1. Summary
 

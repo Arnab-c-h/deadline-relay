@@ -1,6 +1,10 @@
 # Evaluation evidence
 
+> The browser results below describe the earlier local prototype. Following the owner’s scope correction, they do not count as final acceptance. Normal runtime now requires real connections. Final acceptance must use the deployed application and test records in the actual apps; see PRODUCTION-TARGET.md.
+
 Verified locally on September 13, 2026. These are measured local results, not live-provider results.
+
+After the connected-runtime correction: 56 backend tests and 8 frontend tests pass, Ruff and production build pass. Two new API tests prove default startup requires live connections, runtime configuration cannot enable simulation, and the normal API exposes no reset action. The running server reports all three connections and the real model as missing, with no fabricated project or run history. This is a setup checkpoint, not a successful live acceptance run.
 
 ## Automated checks
 

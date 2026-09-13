@@ -34,7 +34,7 @@ class WorkflowError(Exception):
 
 
 class RelayService:
-    def __init__(self, store, provider, mode="simulated"):
+    def __init__(self, store, provider, mode="live"):
         self.store, self.provider, self.mode = store, provider, mode
         self.execution_guard = threading.Lock()
 
@@ -44,7 +44,12 @@ class RelayService:
             "Select an LLM provider/model and configure runtime access before live planning.",
             "Verify dedicated Notion, GitHub and Google Calendar resources.",
         ]
-        return {"mode": self.mode, "project": {"name": "Atlas Release 1.0", "timezone": "Asia/Kolkata"},
+        project = getattr(self.provider, "config", {}).get("project", {})
+        if self.mode == "simulated":
+            project = {"name": "Atlas Release 1.0", "timezone": "Asia/Kolkata"}
+        return {"mode": self.mode, "project": {
+                    "name": project.get("name", "Project not configured"),
+                    "timezone": project.get("timezone", "Not configured")},
                 "connections": connections,
                 "model": {"status": "simulated" if self.mode == "simulated" else "missing",
                           "detail": "Offline date parser; no LLM call" if self.mode == "simulated"

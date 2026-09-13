@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from relay.main import create_app
@@ -42,3 +43,20 @@ def test_unexpected_approval_fields_are_rejected(tmp_path):
         response = client.post("/api/plans/no-plan/approve", json={"version": 1, "hash": "x",
             "idempotency_key": "forged", "operations": [{"delete": "everything"}]})
         assert response.status_code == 422
+def test_normal_startup_requires_real_connections_and_has_no_reset(tmp_path, monkeypatch):
+    monkeypatch.delenv("RELAY_MODE", raising=False)
+    monkeypatch.setenv("DEMO_CONFIG_PATH", str(tmp_path / "missing.json"))
+    with TestClient(create_app(tmp_path)) as client:
+        health = client.get("/api/projects/demo/health").json()
+        assert health["mode"] == "live"
+        assert health["project"]["name"] == "Project not configured"
+        assert health["model"]["status"] == "missing"
+        assert client.post("/api/projects/demo/snapshots", json={}).status_code == 503
+        assert "/api/demo/reset" not in client.get("/openapi.json").json()["paths"]
+        assert client.post("/api/demo/reset", json={"confirm": True}).status_code in {404, 405}
+
+
+def test_environment_cannot_enable_simulated_runtime(tmp_path, monkeypatch):
+    monkeypatch.setenv("RELAY_MODE", "simulated")
+    with pytest.raises(RuntimeError, match="real connections"):
+        create_app(tmp_path)

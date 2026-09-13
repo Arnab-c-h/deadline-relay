@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import type { Health, Operation, Plan, Run, Snapshot } from './types'
 
-const DEFAULT_REQUEST = 'Move Atlas Release 1.0 to September 18, 2026.'
+const DEFAULT_REQUEST = ''
 const ACTIVE = new Set(['QUEUED', 'PREFLIGHT', 'EXECUTING', 'VERIFYING'])
 const RESUMABLE = new Set(['PARTIAL', 'UNCERTAIN', 'FAILED'])
 const UNFINISHED = new Set([...ACTIVE, ...RESUMABLE, 'EXHAUSTED'])
@@ -18,7 +18,7 @@ function titleCase(value: string) {
 function dateLabel(value: string | null) {
   if (!value) return 'Unknown date'
   const date = new Date(`${value}T12:00:00`)
-  return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric' }).format(date)
+  return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(date)
 }
 
 function formatValue(value: unknown) {
@@ -155,7 +155,7 @@ export default function App() {
   const unrelatedItems = plan?.items.filter((item) => item.disposition === 'unrelated') ?? []
 
   return <div className="app-shell">
-    <header className="masthead"><div className="brand"><span className="brand-mark">DR</span><span>Deadline Relay</span></div><div className="mode"><span className={`mode-dot ${health?.mode ?? 'unknown'}`} />{health?.mode === 'simulated' ? 'Simulated mode' : health?.mode === 'live' ? 'Live mode' : 'Checking mode'}</div></header>
+    <header className="masthead"><div className="brand"><span className="brand-mark">DR</span><span>Deadline Relay</span></div><div className="mode"><span className={`mode-dot ${health?.mode ?? 'unknown'}`} />{health?.mode === 'simulated' ? 'Simulated mode' : health?.mode === 'live' ? (setupBlocked ? 'Setup required' : 'Connected') : 'Checking mode'}</div></header>
     <main>
       <section className="hero"><div><p className="eyebrow">Coordinated release planning</p><h1>Move one deadline.<br />Keep every tool aligned.</h1><p className="lede">Preview the consequences across Notion, GitHub, and Calendar before a single record changes.</p></div><div className="step-index"><span>{run ? '04' : plan?.status === 'ready' ? '03' : plan ? '02' : '01'}</span><small>{run ? 'Run evidence' : plan?.status === 'ready' ? 'Approval' : plan ? 'Impact' : 'Request'}</small></div></section>
 
@@ -165,7 +165,7 @@ export default function App() {
       <div className="workspace">
         <div className="primary">
           <section className="card request-card"><div className="section-heading"><div><p className="eyebrow">01 · Request</p><h2>What changed?</h2></div><span className="no-write">Preview only · no writes</span></div>
-            <label htmlFor="request">Deadline request</label><textarea id="request" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} />
+            <label htmlFor="request">Deadline request</label><textarea id="request" placeholder="Describe the deadline change for your connected project" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} />
             <button className="button primary-button" onClick={analyze} disabled={!health || setupBlocked || Boolean(loading) || !prompt.trim()}>{loading === 'plan' ? <><span className="spinner" />Reading project state…</> : 'Analyze impact'}</button>
           </section>
 
@@ -173,13 +173,13 @@ export default function App() {
 
           {plan && <section className="card reveal"><div className="section-heading"><div><p className="eyebrow">02 · Impact</p><h2>{plan.status === 'ready' ? 'Exact changes for approval' : plan.status === 'infeasible' ? 'That date cannot hold' : plan.status === 'clarification' ? 'Clarification needed' : 'Planning is blocked'}</h2></div><span className={`status status-${plan.status}`}>{titleCase(plan.status)}</span></div>
             <p className="explanation">{plan.explanation}</p>
-            {plan.requested_date && <p className="resolved-date"><span>Resolved requested date</span><strong>{dateLabel(plan.requested_date)}, 2026</strong></p>}
+            {plan.requested_date && <p className="resolved-date"><span>Resolved requested date</span><strong>{dateLabel(plan.requested_date)}</strong></p>}
             {plan.conflicts.length > 0 && <div className="conflicts">{plan.conflicts.map((conflict) => <div key={conflict}><span>Constraint</span><p>{conflict}</p></div>)}</div>}
             {dependencyItems.length > 0 && <div className="chain-section"><h3>Dependency path</h3><div className="chain" aria-label="Dependency chain">{dependencyItems.map((item, index) => { const next = dependencyItems[index + 1]; const edge = next && snapshot?.nodes.find((node) => node.id === next.id)?.predecessors.includes(item.id); return <div className={`chain-item ${item.disposition}`} key={item.id}><small>{item.id}</small><strong>{item.name}</strong><span>{item.after}</span><Source url={item.source_url} />{edge && <i>→</i>}</div> })}</div></div>}
             {additionalConstraints.length > 0 && <div className="preserved constraints"><h3>Additional constraints</h3>{additionalConstraints.map((item) => <div key={item.id}><span><strong>{item.name}</strong><small>{item.after}</small></span><Source url={item.source_url} /></div>)}</div>}
             {unrelatedItems.length > 0 && <div className="preserved"><h3>Unrelated and preserved</h3>{unrelatedItems.map((item) => <div key={item.id}><span><strong>{item.name}</strong><small>{item.after}</small></span><Source url={item.source_url} /></div>)}</div>}
             {plan.assumptions.length > 0 && <div className="assumptions"><strong>Planning assumptions</strong><ul>{plan.assumptions.map((item) => <li key={item}>{item}</li>)}</ul></div>}
-            {plan.status === 'infeasible' && plan.proposed_date && <div className="alternative"><div><p className="eyebrow">Earliest feasible alternative</p><strong>{dateLabel(plan.proposed_date)}, 2026</strong><span>This creates a new plan. You will review it before approval.</span></div><button className="button secondary-button" onClick={chooseAlternative} disabled={Boolean(loading)}>{loading === 'alternative' ? 'Building plan…' : `Plan for ${dateLabel(plan.proposed_date)}`}</button></div>}
+            {plan.status === 'infeasible' && plan.proposed_date && <div className="alternative"><div><p className="eyebrow">Earliest feasible alternative</p><strong>{dateLabel(plan.proposed_date)}</strong><span>This creates a new plan. You will review it before approval.</span></div><button className="button secondary-button" onClick={chooseAlternative} disabled={Boolean(loading)}>{loading === 'alternative' ? 'Building plan…' : `Plan for ${dateLabel(plan.proposed_date)}`}</button></div>}
             {plan.status === 'ready' && <><OperationTable operations={plan.operations} />{!run && <div className="approval"><div><p className="eyebrow">03 · Explicit approval</p><strong>Plan version {plan.version}</strong><code>{plan.hash}</code><span>Approval authorizes only the {plan.operations.length} exact {plan.operations.length === 1 ? 'change' : 'changes'} above.</span><span>Snapshot captured {timestamp(snapshot?.captured_at)}</span></div><button className="button approve-button" onClick={approve} disabled={Boolean(loading)}>{loading === 'approve' ? 'Submitting once…' : approveFailed ? `Retry approval · v${plan.version}` : `Approve version ${plan.version}`}</button></div>}</>}
           </section>}
 
@@ -195,12 +195,12 @@ export default function App() {
           </section>}
         </div>
 
-        <aside><section className="side-card"><p className="eyebrow">Project context</p><h3>{health?.project.name ?? 'Loading project…'}</h3><dl><div><dt>Current deadline</dt><dd>{snapshot ? dateLabel(snapshot.project.deadline) : 'September 25, 2026'}</dd></div><div><dt>Timezone</dt><dd>{health?.project.timezone ?? 'Asia/Kolkata'}</dd></div><div><dt>Planning rule</dt><dd>Working days only</dd></div></dl></section>
+        <aside><section className="side-card"><p className="eyebrow">Project context</p><h3>{health?.project.name ?? 'Loading project…'}</h3><dl><div><dt>Snapshot deadline</dt><dd>{snapshot ? dateLabel(snapshot.project.deadline) : 'Not loaded'}</dd></div><div><dt>Timezone</dt><dd>{health?.project.timezone ?? 'Not loaded'}</dd></div><div><dt>Planning rule</dt><dd>Working days only</dd></div></dl></section>
           <section className="side-card"><p className="eyebrow">Sources</p><div className="connections">{health?.connections.map((connection) => { const name = connection.provider ?? connection.name ?? 'source'; return <div key={name}><span className={`connection-dot ${connection.status}`} /><div><strong>{titleCase(name)}</strong><small>{connection.detail}</small></div><em>{titleCase(connection.status)}</em></div> }) ?? <span className="skeleton" />}</div></section>
           <section className="side-card trust"><p className="eyebrow">Authority boundary</p><p>Reading and planning do not modify records. Execution uses the approved version and hash, then verifies each result.</p></section>
         </aside>
       </div>
     </main>
-    <footer><span>Deadline Relay · Local demo</span><span>Notion / GitHub / Google Calendar</span></footer>
+    <footer><span>Deadline Relay</span><span>Notion / GitHub / Google Calendar</span></footer>
   </div>
 }

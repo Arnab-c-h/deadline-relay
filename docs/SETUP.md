@@ -1,12 +1,12 @@
 # Runtime setup checkpoint
 
-The simulator requires no accounts, API keys, or MCP connections. A Codex connector gives the assistant access; it does not give the independently running Python app credentials. This app uses direct provider APIs.
+The application requires real provider connections and model access. See PRODUCTION-TARGET.md for the required Vercel migration. A Codex connector gives the assistant access; it does not give the independently running Python app credentials. This app uses direct provider APIs.
 
 ## Information needed from the owner
 
 1. LLM provider and model to use, plus the location of its local API key. The model adapter is deliberately pending this choice. `LLM_PROVIDER`, `LLM_MODEL`, and `LLM_API_KEY` are reserved placeholders, not implemented switches.
-2. A dedicated fictional GitHub repository, Notion data source, and owned Google Calendar, with the existing fixture resource IDs listed below. Send resource links/IDs in chat; keep secrets in local files.
-3. Runtime credentials with access to those resources. No live resource has been created or edited during this implementation.
+2. Dedicated GitHub, Notion and Google Calendar destinations. The owner has authorized creating clearly named test records inside these actual apps for final acceptance; destination access is still required. Send resource links/IDs in chat; keep secrets in local files.
+3. Runtime credentials with access to those resources. No live resource has been created or edited during this implementation. The OAuth helper below is for local diagnostics; deployed OAuth callbacks and encrypted credential persistence are required before hosted acceptance.
 
 ## Local files
 
@@ -18,7 +18,7 @@ Copy-Item config.example.json config.local.json
 New-Item -ItemType Directory -Force secrets
 ```
 
-Both local configuration files and `secrets/` are ignored. Leave `RELAY_MODE=simulated` until setup and the selected model adapter are complete. Setting `live` now displays setup requirements and blocks planning; it never falls back to simulated success.
+Both local configuration files and `secrets/` are ignored. Use `RELAY_MODE=live`. Startup rejects a simulated environment setting. Until real connections and the model adapter are ready, the application displays setup requirements and blocks planning.
 
 ## GitHub
 

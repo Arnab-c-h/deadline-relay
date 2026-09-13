@@ -2,7 +2,7 @@
 
 Preview and approve a release-date change across Notion, a GitHub milestone, and Google Calendar. The local app includes deterministic scheduling, exact before/after review, a durable SQLite execution journal, and read-back verification.
 
-**Current state:** working local simulator; direct provider adapters tested with mocked HTTP. Live model integration, real three-app verification, and the submission recording are pending user setup. Simulated interpretation uses a conservative date parser and does not call an LLM.
+**Current target:** a fully connected Vercel application. Normal startup requires real connections and blocks planning when setup is missing. Hosted persistence, durable execution, authentication, hosted OAuth and the selected real model adapter remain in progress. See [the revised deployment requirements](docs/PRODUCTION-TARGET.md).
 
 ## Run locally
 
@@ -20,20 +20,9 @@ uv run uvicorn relay.main:app --host 127.0.0.1 --port 8000
 
 Open [Deadline Relay](http://127.0.0.1:8000). Use one server process and one worker. `scripts/start.ps1` performs these setup/build/start steps and stops if a command fails.
 
-## Try the workflow
+## Connect before planning
 
-1. Analyze the prefilled request for **September 18, 2026**. It is infeasible; no write is permitted.
-2. Select **Plan for September 24** and review five exact operations: move M2, T4, T5, the GitHub milestone deadline, and the Notion release date/plan marker.
-3. Approve the displayed version and hash. The run becomes **Verified** only after read-back and final preservation/constraint checks.
-4. Reloading preserves the SQLite journal. Interrupted runs appear for review; resuming reconciles uncertain writes before retrying. Exhausted retries require review and approval of a new recovery plan.
-
-For a new simulated demonstration, with no unfinished run:
-
-```powershell
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/demo/reset -ContentType 'application/json' -Body '{"confirm":true}'
-```
-
-Reset preserves run evidence and creates a new fixture generation, making old unexecuted plans stale. It never resets live resources.
+Follow [runtime setup](docs/SETUP.md). The app currently shows connection setup requirements; it does not substitute fictional records or simulated model responses. The previous fixture workflow is available only to isolated automated tests. Final acceptance will use uniquely named test records inside the actual apps through the deployed UI.
 
 ## Validate
 
@@ -47,4 +36,4 @@ See [evaluation evidence](docs/EVALUATION.md), [runtime setup](docs/SETUP.md), [
 
 React → FastAPI → deterministic planner → version/hash approval → SQLite executor → provider adapters → read-back verification. Models will interpret a request only; they will not select writable resources or execute changes.
 
-This is one configured fictional project in Asia/Kolkata, Monday–Friday, a 30-working-day horizon, supplied task estimates, and one movable non-recurring meeting. It does not model holidays, task resource capacity, multiple attendee calendars, recurring-event edits, or distributed execution. Notion/GitHub writes are not an atomic transaction; the journal exposes partial results. Local files containing credentials, state, build outputs, or browser captures are ignored by Git.
+The scheduler currently supports one configured project in Asia/Kolkata, Monday–Friday, a 30-working-day horizon, supplied task estimates, and one movable non-recurring meeting. It does not model holidays, task resource capacity, multiple attendee calendars, recurring-event edits, or distributed execution yet. The current local SQLite/background-task implementation must be migrated before Vercel deployment. Notion/GitHub writes are not an atomic transaction; the journal exposes partial results. Local files containing credentials, state, build outputs, or browser captures are ignored by Git.
